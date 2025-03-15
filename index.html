@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Alphabetical Keyboard Remapper</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    textarea {
+      width: 100%;
+      height: 150px;
+      font-size: 16px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <h1>Alphabetical Keyboard Remapper</h1>
+  <p>
+    Type in the text box below. Keys from the QWERTY layout are remapped into an alphabetical sequence.
+  </p>
+  <textarea id="output" placeholder="Type here..."></textarea>
+  
+  <script>
+    // Define the physical key order based on a QWERTY layout.
+    const physicalKeysOrder = [
+      "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP",
+      "KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ", "KeyK", "KeyL",
+      "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM"
+    ];
+    
+    // The alphabetical order we want to map to.
+    const alphabetical = "abcdefghijklmnopqrstuvwxyz".split("");
+    
+    // Build a mapping: physical key code => alphabetical letter.
+    const keyMapping = {};
+    physicalKeysOrder.forEach((code, index) => {
+      keyMapping[code] = alphabetical[index];
+    });
+    
+    const outputArea = document.getElementById("output");
+    
+    // Listen for keydown events.
+    window.addEventListener("keydown", function(e) {
+      // If a control or command key is held down, let the event behave normally.
+      if (e.ctrlKey || e.metaKey) {
+        return;
+      }
+      
+      // Check if the pressed key is in our mapping.
+      if (keyMapping[e.code]) {
+
+        e.preventDefault();
+        let letter = keyMapping[e.code];
+
+        if (e.shiftKey) {
+          letter = letter.toUpperCase();
+        }
+
+        const start = outputArea.selectionStart;
+        const end = outputArea.selectionEnd;
+
+        const text = outputArea.value;
+        const newText = text.slice(0, start) + letter + text.slice(end);
+        outputArea.value = newText;
+
+        outputArea.setSelectionRange(start + 1, start + 1);
+      }
+    });
+  </script>
+</body>
+</html>
