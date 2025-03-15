@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Alphabetical Keyboard Remapper</title>
+  <title>Keyboard Remapper with Flip Function</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     textarea {
@@ -12,61 +12,145 @@
       padding: 10px;
       box-sizing: border-box;
     }
+    label, button {
+      font-size: 16px;
+      margin: 10px 0;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
-  <h1>Alphabetical Keyboard Remapper</h1>
+  <h1>Keyboard Remapper with Flip Function</h1>
   <p>
-    Type in the text box below. Keys from the QWERTY layout are remapped into an alphabetical sequence.
+    Type in the box below. With live remapping enabled, keys from a QWERTY keyboard are converted into an alphabetical sequence as you type.
+    If you later want to undo (or apply) that conversion to the whole text, click the "Flip Text Format" button.
   </p>
+  
+  <!-- Toggle for live remapping -->
+  <label>
+    <input type="checkbox" id="toggleRemap" checked>
+    Enable Live Keyboard Remapping
+  </label>
+  <br>
   <textarea id="output" placeholder="Type here..."></textarea>
+  <br>
+  <button id="flipButton">Flip Text Format</button>
   
   <script>
-    // Define the physical key order based on a QWERTY layout.
+    // Live remapping flag and current text mode tracker.
+    let remappingEnabled = true;
+    // currentMode indicates the format currently in the textbox:
+    // "qwerty" means the text shows the normal QWERTY letters,
+    // "alphabetical" means the text shows remapped (alphabetical) letters.
+    let currentMode = "qwerty";
+    
+    // Update live remapping based on checkbox.
+    const toggleRemap = document.getElementById("toggleRemap");
+    toggleRemap.addEventListener("change", function() {
+      remappingEnabled = toggleRemap.checked;
+    });
+    
+    // Define the physical key order (from a QWERTY layout).
+    // Note: The letters below are the actual QWERTY letters.
     const physicalKeysOrder = [
       "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP",
       "KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ", "KeyK", "KeyL",
       "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM"
     ];
     
-    // The alphabetical order we want to map to.
+    // QWERTY letters corresponding to the physical keys.
+    const qwertyLetters = ["q","w","e","r","t","y","u","i","o","p",
+                           "a","s","d","f","g","h","j","k","l",
+                           "z","x","c","v","b","n","m"];
+    
+    // The alphabetical letters we want to map to.
     const alphabetical = "abcdefghijklmnopqrstuvwxyz".split("");
     
-    // Build a mapping: physical key code => alphabetical letter.
-    const keyMapping = {};
+    // Build mapping objects:
+    // qwertyToAlpha: converts a QWERTY letter to its remapped alphabetical letter.
+    // alphaToQwerty: converts an alphabetical letter back to the QWERTY letter.
+    const qwertyToAlpha = {};
+    const alphaToQwerty = {};
+    
     physicalKeysOrder.forEach((code, index) => {
-      keyMapping[code] = alphabetical[index];
+      // Use the corresponding QWERTY letter from our list.
+      let qwertyLetter = qwertyLetters[index];
+      let alphaLetter = alphabetical[index];
+      qwertyToAlpha[qwertyLetter] = alphaLetter;
+      alphaToQwerty[alphaLetter] = qwertyLetter;
     });
     
     const outputArea = document.getElementById("output");
     
-    // Listen for keydown events.
+    // Live key remapping: on keydown, if remapping is enabled, convert the key.
     window.addEventListener("keydown", function(e) {
-      // If a control or command key is held down, let the event behave normally.
-      if (e.ctrlKey || e.metaKey) {
-        return;
-      }
+      if (!remappingEnabled) return;
+      // Allow shortcuts (Ctrl/Command) to work normally.
+      if (e.ctrlKey || e.metaKey) return;
       
-      // Check if the pressed key is in our mapping.
-      if (keyMapping[e.code]) {
-
-        e.preventDefault();
-        let letter = keyMapping[e.code];
-
-        if (e.shiftKey) {
-          letter = letter.toUpperCase();
+      // Check if the pressed key is a single letter.
+      if (e.key.length === 1 && /[a-zA-Z]/.test(e.key)) {
+        let lowerKey = e.key.toLowerCase();
+        // If this letter is part of our QWERTY mapping...
+        if (qwertyToAlpha[lowerKey]) {
+          e.preventDefault();
+          let letter = qwertyToAlpha[lowerKey];
+          // Honor Shift for uppercase output.
+          if (e.shiftKey) {
+            letter = letter.toUpperCase();
+          }
+          // Insert at the current caret position.
+          const start = outputArea.selectionStart;
+          const end = outputArea.selectionEnd;
+          const text = outputArea.value;
+          const newText = text.slice(0, start) + letter + text.slice(end);
+          outputArea.value = newText;
+          outputArea.setSelectionRange(start + 1, start + 1);
+          // Since live remapping converts from QWERTY to alphabetical,
+          // update our current mode accordingly.
+          currentMode = "alphabetical";
         }
-
-        const start = outputArea.selectionStart;
-        const end = outputArea.selectionEnd;
-
-        const text = outputArea.value;
-        const newText = text.slice(0, start) + letter + text.slice(end);
-        outputArea.value = newText;
-
-        outputArea.setSelectionRange(start + 1, start + 1);
       }
     });
+    
+    // Function to flip the entire text in the textbox.
+    function flipText() {
+      let text = outputArea.value;
+      let newText = "";
+      // If the text is currently in QWERTY format, convert to alphabetical.
+      if (currentMode === "qwerty") {
+        for (let char of text) {
+          if (/[a-zA-Z]/.test(char)) {
+            let isUpper = (char === char.toUpperCase());
+            let lower = char.toLowerCase();
+            let converted = qwertyToAlpha[lower] || lower;
+            if (isUpper) converted = converted.toUpperCase();
+            newText += converted;
+          } else {
+            newText += char;
+          }
+        }
+        currentMode = "alphabetical";
+      } else {
+        // Otherwise, convert from alphabetical back to QWERTY.
+        for (let char of text) {
+          if (/[a-zA-Z]/.test(char)) {
+            let isUpper = (char === char.toUpperCase());
+            let lower = char.toLowerCase();
+            let converted = alphaToQwerty[lower] || lower;
+            if (isUpper) converted = converted.toUpperCase();
+            newText += converted;
+          } else {
+            newText += char;
+          }
+        }
+        currentMode = "qwerty";
+      }
+      outputArea.value = newText;
+    }
+    
+    // Attach the flipText function to the flip button.
+    document.getElementById("flipButton").addEventListener("click", flipText);
   </script>
 </body>
 </html>
