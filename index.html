@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Keyboard Remapper with Flip Function</title>
+  <title>Keyboard Remapper with Flip Function and Vercel Analytics</title>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     textarea {
@@ -151,6 +151,12 @@
     
     // Attach the flipText function to the flip button.
     document.getElementById("flipButton").addEventListener("click", flipText);
+  </script>
+  
+  <!-- Vercel Analytics Injection -->
+  <script type="module">
+    import { inject } from "@vercel/analytics";
+    inject();
   </script>
 </body>
 </html>
